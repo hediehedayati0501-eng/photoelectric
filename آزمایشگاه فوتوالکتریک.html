@@ -1,0 +1,460 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>آزمایشگاه فوتوالکتریک</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&family=Lalezar&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dark optics-bench. Stage (tube + beam) on top, controls and live readouts side by side, I–V graph, then guided missions. */
+:root{
+  --bg:#0a1017; --panel:#111a24; --panel2:#0d151e; --line:#22323f;
+  --fg:#dfe9f1; --mute:#8aa0b2; --teal:#6fe0d0; --amber:#f3b34c; --bad:#ff8585; --ok:#7be495;
+  --font:'Vazirmatn',Tahoma,system-ui,sans-serif; --display:'Lalezar','Vazirmatn',Tahoma,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.75}
+.app{max-width:1040px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+.app>*{min-width:0}
+header{display:grid;gap:4px;padding-block:8px}
+.eyebrow{margin:0;color:var(--teal);font-size:13px;letter-spacing:.04em}
+h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(36px,7vw,60px);line-height:1.2;text-wrap:balance}
+.lede{margin:0;color:var(--mute);max-width:62ch;text-wrap:pretty}
+h2{margin:0 0 10px;font-size:17px;font-weight:700}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.stagecard{padding:0;overflow:hidden;background:var(--panel2)}
+canvas{display:block;width:100%}
+#stage{aspect-ratio:2/1}
+#ivc{aspect-ratio:640/260}
+#h-chart{aspect-ratio:640/300}
+.status{padding:12px 16px;border-top:1px solid var(--line);font-size:14px;min-height:3.4em;display:flex;align-items:center}
+.status.ok{color:var(--ok)} .status.warn{color:var(--amber)} .status.bad{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:16px}
+.field{display:grid;gap:6px;margin-bottom:16px}
+.field label,.flabel{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--mute)}
+.num{font-family:var(--mono);direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.field .num{color:var(--fg);font-size:15px}
+input[type=range]{width:100%;height:28px;accent-color:var(--teal);background:transparent;cursor:pointer}
+#lam{-webkit-appearance:none;appearance:none;height:14px;border-radius:7px;margin-block:7px;border:1px solid var(--line)}
+#lam::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:26px;border-radius:4px;background:var(--fg);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--mute)}
+#lam::-moz-range-thumb{width:18px;height:22px;border-radius:4px;background:var(--fg);border:2px solid var(--bg)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;color:var(--fg);cursor:pointer}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;display:grid;justify-items:center;line-height:1.35;min-width:62px}
+.chip small{color:var(--mute);font-size:11px}
+.chip[aria-pressed=true]{border-color:var(--teal);background:#12302f}
+.chip[aria-pressed=true] small{color:var(--teal)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 14px}
+.btn:hover{border-color:var(--mute)}
+.btn.primary{background:var(--teal);color:#06201d;border-color:var(--teal);font-weight:700}
+.stepper{display:flex;gap:6px;flex-wrap:wrap}
+.stepper .btn{padding:3px 10px;font-family:var(--mono);font-size:13px;direction:ltr}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.readouts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ro{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-width:0}
+.ro span{display:block;color:var(--mute);font-size:12px}
+.ro b{font-family:var(--mono);font-weight:600;font-size:20px;direction:ltr;unicode-bidi:isolate;display:block;text-align:right;font-variant-numeric:tabular-nums}
+.ro b i{font-style:normal;font-size:12px;color:var(--mute);font-weight:400;margin-inline-start:4px}
+.ro.hl b{color:var(--teal)} .ro.cur b{color:var(--amber)}
+.formula{margin:12px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:6px;color:var(--mute);font-size:14px}
+.formula .num{color:var(--fg)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tab{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:14px}
+.tab[aria-selected=true]{border-color:var(--amber);color:var(--amber)}
+.tab.done::after{content:" ✓";color:var(--ok)}
+.score{margin-inline-start:auto;color:var(--mute);font-size:14px;align-self:center}
+.mission{display:grid;gap:12px}
+.mission p{margin:0;text-wrap:pretty;max-width:68ch}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.msg{min-height:1.8em;font-size:14px}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)} .msg.warn{color:var(--amber)}
+.opts{display:grid;gap:8px}
+.opt{text-align:start;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:9px 12px}
+.opt.right{border-color:var(--ok)} .opt.wrong{border-color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--mute);font-weight:500}
+.tw{overflow-x:auto;max-height:230px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.theory ul{margin:0;padding-inline-start:20px;display:grid;gap:6px;color:var(--mute)}
+.theory li b{color:var(--fg);font-weight:500}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="app" dir="rtl" lang="fa">
+  <header>
+    <p class="eyebrow">فیزیک مدرن · آزمایشگاه مجازی</p>
+    <h1>اثر فوتوالکتریک</h1>
+    <p class="lede">نور را به یک فلز بتابان، الکترون‌ها را در لامپ خلأ دنبال کن و ثابت پلانک را از داده‌های خودت به دست بیاور.</p>
+  </header>
+
+  <section class="card stagecard" aria-label="لامپ فوتوسل">
+    <canvas id="stage" role="img" aria-label="شبیه‌سازی تابش نور به کاتد فلزی و حرکت الکترون‌ها به سمت آند"></canvas>
+    <div id="status" class="status" aria-live="polite"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>کنترل آزمایش</h2>
+      <div class="field">
+        <span class="flabel">جنس کاتد (تابع کار φ)</span>
+        <div class="chips" id="metals"></div>
+      </div>
+      <div class="field">
+        <label for="lam"><span>طول موج نور</span><span class="num" id="lamO"></span></label>
+        <input id="lam" type="range" min="100" max="700" step="1" dir="ltr">
+      </div>
+      <div class="field">
+        <label for="inten"><span>شدت نور</span><span class="num" id="intenO"></span></label>
+        <input id="inten" type="range" min="0" max="100" step="1" dir="ltr">
+      </div>
+      <div class="field">
+        <label for="volt"><span>ولتاژ آند نسبت به کاتد</span><span class="num" id="voltO"></span></label>
+        <input id="volt" type="range" min="-5" max="5" step="0.01" dir="ltr">
+        <div class="stepper" dir="ltr">
+          <button class="btn" data-dv="-0.1">−0.10</button><button class="btn" data-dv="-0.01">−0.01</button>
+          <button class="btn" data-dv="0.01">+0.01</button><button class="btn" data-dv="0.1">+0.10</button>
+          <button class="btn" data-dv="zero">0</button>
+        </div>
+      </div>
+      <button class="btn" id="beam"></button>
+    </div>
+
+    <div class="card">
+      <h2>اندازه‌گیری زنده</h2>
+      <div class="readouts" id="ro"></div>
+      <p class="formula" id="formula"></p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>نمودار جریان–ولتاژ</h2>
+    <canvas id="ivc" role="img" aria-label="نمودار جریان فوتوالکتریک بر حسب ولتاژ"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>ماموریت‌ها</h2>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="mission" id="mission"></div>
+  </section>
+
+  <section class="card theory">
+    <h2>چرا فیزیک کلاسیک شکست خورد؟</h2>
+    <ul>
+      <li><b>فرکانس آستانه:</b> زیر یک فرکانس مشخص، هر چقدر شدت را زیاد کنی هیچ الکترونی خارج نمی‌شود. موج کلاسیک چنین چیزی پیش‌بینی نمی‌کرد.</li>
+      <li><b>بدون تاخیر:</b> الکترون‌ها همان لحظه‌ی تابش آزاد می‌شوند، حتی با نور بسیار ضعیف.</li>
+      <li><b>انرژی مستقل از شدت:</b> شدت فقط تعداد الکترون‌ها را عوض می‌کند. انرژی بیشینه‌ی آن‌ها به فرکانس بستگی دارد: KE<sub>max</sub> = hf − φ. اینشتین این را با کوانتای نور توضیح داد (۱۹۰۵) و مقدار h را میلیکان سال‌ها بعد اندازه گرفت.</li>
+    </ul>
+  </section>
+</div>
+<script>
+(function(){
+'use strict';
+var HC=1239.84, QE=1.602e-19, C=2.998e8, H_TRUE=6.626;
+var METALS=[
+ {id:'Cs',n:'سزیم',phi:2.14,col:'#c8b077'},{id:'K',n:'پتاسیم',phi:2.30,col:'#b4b8c8'},
+ {id:'Na',n:'سدیم',phi:2.75,col:'#d6c9a0'},{id:'Zn',n:'روی',phi:4.30,col:'#9fb0b8'},
+ {id:'Cu',n:'مس',phi:4.65,col:'#cf8a62'},{id:'Pt',n:'پلاتین',phi:5.65,col:'#c8ced6'}];
+var S={metal:2,lam:400,inten:60,V:0,beam:true};
+var $=function(id){return document.getElementById(id)};
+var T=function(n){return n<0?'−'+Math.abs(n).toFixed(2):n.toFixed(2)};
+
+function phys(){
+  var m=METALS[S.metal], Eph=HC/S.lam, K=Math.max(0,Eph-m.phi);
+  return {m:m,Eph:Eph,K:K,f:C/(S.lam*1e-9)/1e14,Isat:(K>0?2.0*S.inten/100:0),lam0:HC/m.phi};
+}
+function cur(V,p){
+  if(p.K<=0||p.Isat<=0)return 0;
+  if(V>=0)return p.Isat*(1-0.15*Math.exp(-V/0.8));
+  if(V<=-p.K)return 0;
+  var r=1+V/p.K; return 0.85*p.Isat*r*r;
+}
+function beamRGB(w){
+  if(w<380)return [170,120,255];
+  if(w>750)return [170,50,50];
+  var r=0,g=0,b=0;
+  if(w<440){r=(440-w)/60;b=1}else if(w<490){g=(w-440)/50;b=1}else if(w<510){g=1;b=(510-w)/20}
+  else if(w<580){r=(w-510)/70;g=1}else if(w<645){r=1;g=(645-w)/65}else{r=1}
+  var f=1; if(w<420)f=.45+.55*(w-380)/40; else if(w>700)f=.45+.55*(750-w)/50;
+  return [r,g,b].map(function(x){return Math.round(255*Math.pow(x*f,.8))});
+}
+var rgba=function(c,a){return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()};
+
+/* ---------- controls ---------- */
+(function buildStatic(){
+  var stops=[];for(var w=100;w<=700;w+=20){stops.push(rgba(beamRGB(w),1)+' '+((w-100)/6).toFixed(1)+'%')}
+  $('lam').style.background='linear-gradient(to right,'+stops.join(',')+')';
+  $('metals').innerHTML=METALS.map(function(m,i){
+    return '<button class="chip" data-m="'+i+'" aria-pressed="false">'+m.n+'<small class="num">'+m.phi.toFixed(2)+' eV</small></button>';
+  }).join('');
+})();
+$('metals').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;S.metal=+b.dataset.m;sync();});
+$('lam').addEventListener('input',function(e){S.lam=+e.target.value;sync(true)});
+$('inten').addEventListener('input',function(e){S.inten=+e.target.value;sync(true)});
+$('volt').addEventListener('input',function(e){S.V=+e.target.value;sync(true)});
+document.querySelector('.stepper').addEventListener('click',function(e){
+  var b=e.target.closest('[data-dv]');if(!b)return;
+  var d=b.dataset.dv; S.V=d==='zero'?0:Math.max(-5,Math.min(5,Math.round((S.V+ +d)*100)/100)); sync();
+});
+$('beam').addEventListener('click',function(){S.beam=!S.beam;sync()});
+
+var roDefs=[['lam','طول موج','nm',''],['f','فرکانس','×10¹⁴ Hz',''],['E','انرژی فوتون hf','eV',''],['phi','تابع کار φ','eV',''],
+  ['K','انرژی جنبشی بیشینه','eV','hl'],['V0','ولتاژ ترمز V₀','V','hl'],['I','جریان فوتوالکتریک','µA','cur'],['lam0','طول موج آستانه λ₀','nm','']];
+$('ro').innerHTML=roDefs.map(function(d){return '<div class="ro '+d[3]+'"><span>'+d[1]+'</span><b id="ro_'+d[0]+'">–<i>'+d[2]+'</i></b></div>'}).join('');
+function setRO(k,v,u){$('ro_'+k).innerHTML=v+'<i>'+u+'</i>'}
+
+function sync(fromSlider){
+  var p=phys(), I=cur(S.V,p);
+  if(!fromSlider||true){$('lam').value=S.lam;$('inten').value=S.inten;$('volt').value=S.V;}
+  $('lamO').textContent=S.lam+' nm'+(S.lam<380?' · فرابنفش':S.lam>750?' · فروسرخ':'');
+  $('intenO').textContent=S.inten+'%';
+  $('voltO').textContent=(S.V>0?'+':'')+T(S.V)+' V';
+  document.querySelectorAll('.chip').forEach(function(b){b.setAttribute('aria-pressed',String(+b.dataset.m===S.metal))});
+  $('beam').textContent=S.beam?'خاموش کردن لامپ':'روشن کردن لامپ';
+  setRO('lam',S.lam,'nm');setRO('f',p.f.toFixed(2),'×10¹⁴ Hz');setRO('E',p.Eph.toFixed(2),'eV');setRO('phi',p.m.phi.toFixed(2),'eV');
+  setRO('K',p.K.toFixed(2),'eV');setRO('V0',p.K.toFixed(2),'V');setRO('I',I.toFixed(2),'µA');setRO('lam0',p.lam0.toFixed(0),'nm');
+  $('formula').innerHTML='KE<sub>max</sub> = hf − φ = <span class="num">'+p.Eph.toFixed(2)+' − '+p.m.phi.toFixed(2)+' = '+(p.Eph-p.m.phi).toFixed(2)+' eV</span>'+(p.Eph<p.m.phi?' (منفی یعنی هیچ الکترونی آزاد نمی‌شود)':'')+'<br>hf = 1239.84 / λ(nm) eV';
+  var st=$('status');
+  if(!S.beam||S.inten===0){st.className='status';st.textContent='لامپ خاموش است. نور را روشن کن و شدت را بالا ببر.';}
+  else if(p.K<=0){st.className='status bad';st.textContent='انرژی فوتون ('+p.Eph.toFixed(2)+' eV) از تابع کار ('+p.m.phi.toFixed(2)+' eV) کمتر است. هیچ الکترونی آزاد نمی‌شود، حتی با شدت بیشتر.';}
+  else if(I<0.005){st.className='status warn';st.textContent='جریان صفر شد. ولتاژ ترمز '+T(-p.K)+' V حتی پرانرژی‌ترین الکترون‌ها را از رسیدن به آند باز می‌دارد.';}
+  else{st.className='status ok';st.textContent='هر فوتون یک الکترون با انرژی حداکثر '+p.K.toFixed(2)+' eV آزاد می‌کند. شدت فقط تعداد الکترون‌ها را عوض می‌کند.';}
+  drawIV();
+  if(M.onSync)M.onSync();
+}
+
+/* ---------- stage simulation ---------- */
+var st=$('stage'), sx=st.getContext('2d'), W=800, H=400;
+var EX=190, CX=596, PW=14, PT=100, PB=260, DGAP=CX-(EX+PW), SPD=150;
+var LAMP={x:440,y:34}, photons=[], elecs=[], flashes=[], acc=0, last=0;
+
+function fit(c,w,h){
+  var dpr=window.devicePixelRatio||1, cw=c.clientWidth||w, ch=c.clientHeight||h*cw/w;
+  if(c.width!==Math.round(cw*dpr)){c.width=Math.round(cw*dpr);c.height=Math.round(ch*dpr);}
+  var s=c.width/w; c.getContext('2d').setTransform(s,0,0,s,0,0);
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+function spawnPhoton(){photons.push({s:0,sx:LAMP.x+(Math.random()-.5)*30,ty:PT+16+Math.random()*(PB-PT-32),ph:Math.random()*6.28});}
+function emit(y,p){
+  var u=Math.random(), x=p.K*(1-Math.sqrt(u)), v=Math.max(.04,Math.sqrt(x));
+  elecs.push({x:EX+PW+3,y:y,vx:v,vy:(Math.random()-.5)*1.1*Math.sqrt(p.K+.05),age:0,tr:[]});
+}
+function step(dt){
+  var p=phys(), col=beamRGB(S.lam);
+  if(S.beam&&S.inten>0){acc+=dt*(2+S.inten*.34);while(acc>=1){acc--;spawnPhoton();}}
+  var i,ph,tx=EX+PW+2;
+  for(i=photons.length-1;i>=0;i--){
+    ph=photons[i];ph.s+=dt*1.15;
+    if(ph.s>=1){
+      if(p.K>0&&Math.random()<.7)emit(ph.ty,p); else flashes.push({x:tx,y:ph.ty,t:0,c:'h'});
+      photons.splice(i,1);
+    }
+  }
+  var a=S.V/(2*DGAP)*SPD;
+  for(i=elecs.length-1;i>=0;i--){
+    var e=elecs[i];e.age+=dt;
+    e.tr.push(e.x,e.y);if(e.tr.length>16)e.tr.splice(0,2);
+    e.x+=e.vx*SPD*dt;e.vx+=a*dt;e.y+=e.vy*SPD*.35*dt;
+    if(e.y<PT+6||e.y>PB-6){e.vy=-e.vy;e.y=Math.max(PT+6,Math.min(PB-6,e.y));}
+    if(e.x>=CX){flashes.push({x:CX,y:e.y,t:0,c:'e'});elecs.splice(i,1);}
+    else if(e.x<=EX+PW&&e.vx<0||e.age>14)elecs.splice(i,1);
+  }
+  for(i=flashes.length-1;i>=0;i--){flashes[i].t+=dt;if(flashes[i].t>.35)flashes.splice(i,1);}
+  if(elecs.length>260)elecs.splice(0,elecs.length-260);
+}
+
+function drawStage(){
+  fit(st,W,H);var c=sx,p=phys(),col=beamRGB(S.lam),m=p.m;
+  var bg=css('--panel2'),line=css('--line'),mute=css('--mute'),fg=css('--fg'),teal=css('--teal'),amber=css('--amber');
+  c.clearRect(0,0,W,H);c.fillStyle=bg;c.fillRect(0,0,W,H);
+  // lamp
+  c.fillStyle='#1a2733';rr(c,LAMP.x-34,6,68,26,5);c.fill();c.strokeStyle=line;c.stroke();
+  if(S.beam&&S.inten>0){var gl=c.createRadialGradient(LAMP.x,LAMP.y,2,LAMP.x,LAMP.y,46);gl.addColorStop(0,rgba(col,.35+S.inten/250));gl.addColorStop(1,rgba(col,0));c.fillStyle=gl;c.fillRect(LAMP.x-50,0,100,90);}
+  c.fillStyle=mute;c.font='12px Vazirmatn,Tahoma,sans-serif';c.textAlign='center';c.fillText('منبع نور',LAMP.x+70,24);
+  // tube
+  c.fillStyle='#0b121a';rr(c,110,58,580,246,34);c.fill();c.strokeStyle=line;c.lineWidth=2;c.stroke();c.lineWidth=1;
+  // field tint
+  var tint=Math.min(1,Math.abs(S.V)/5)*.2;
+  if(tint>0){c.fillStyle=(S.V>0?'rgba(111,224,208,':'rgba(243,179,76,')+tint+')';c.fillRect(EX+PW,PT,DGAP,PB-PT);}
+  // beam guide
+  if(S.beam&&S.inten>0){c.strokeStyle=rgba(col,.07+S.inten/900);c.lineWidth=14;c.beginPath();c.moveTo(LAMP.x,LAMP.y+12);c.lineTo(EX+PW+2,(PT+PB)/2);c.stroke();c.lineWidth=1;}
+  // plates
+  c.fillStyle=m.col;c.fillRect(EX,PT,PW,PB-PT);c.fillStyle='#8a98a6';c.fillRect(CX,PT,PW,PB-PT);
+  c.fillStyle=fg;c.font='500 13px Vazirmatn,Tahoma,sans-serif';
+  c.fillText('کاتد · '+m.n,EX+PW/2,PT-12);c.fillText('آند',CX+PW/2,PT-12);
+  c.font='700 16px JetBrains Mono,monospace';c.fillStyle=S.V>0?teal:(S.V<0?amber:mute);
+  c.fillText(S.V>0?'+':(S.V<0?'−':''),CX+PW/2,PB+22);c.fillStyle=mute;c.fillText(S.V<0?'+':(S.V>0?'−':''),EX+PW/2,PB+22);
+  // photons
+  var per=Math.max(5,4+(S.lam-100)/600*26), tx=EX+PW+2, i, k;
+  c.lineWidth=1.6;
+  for(i=0;i<photons.length;i++){
+    var ph=photons[i],px=ph.sx+(tx-ph.sx)*ph.s,py=LAMP.y+12+(ph.ty-LAMP.y-12)*ph.s;
+    var dx=tx-ph.sx,dy=ph.ty-LAMP.y-12,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,nx=-uy,ny=ux;
+    c.strokeStyle=rgba(col,.95);c.beginPath();
+    for(k=0;k<=28;k+=2){var w=Math.sin(k/per*6.283+ph.ph)*3,X=px-ux*k+nx*w,Y=py-uy*k+ny*w;k?c.lineTo(X,Y):c.moveTo(X,Y);}
+    c.stroke();
+  }
+  c.lineWidth=1;
+  // electrons
+  for(i=0;i<elecs.length;i++){
+    var e=elecs[i];c.strokeStyle='rgba(111,224,208,.35)';c.beginPath();
+    for(k=0;k<e.tr.length;k+=2){k?c.lineTo(e.tr[k],e.tr[k+1]):c.moveTo(e.tr[k],e.tr[k+1]);}
+    c.lineTo(e.x,e.y);c.stroke();
+    c.fillStyle=teal;c.beginPath();c.arc(e.x,e.y,3.4,0,6.283);c.fill();
+  }
+  // flashes
+  for(i=0;i<flashes.length;i++){var f=flashes[i],a=1-f.t/.35;
+    c.fillStyle=f.c==='e'?'rgba(111,224,208,'+a*.8+')':rgba(col,a*.6);c.beginPath();c.arc(f.x,f.y,3+f.t*28,0,6.283);c.fill();}
+  // circuit
+  var yb=346;c.strokeStyle=mute;c.lineWidth=1.5;c.beginPath();
+  c.moveTo(EX+PW/2,PB);c.lineTo(EX+PW/2,yb);c.lineTo(330,yb);c.moveTo(430,yb);c.lineTo(500,yb);c.moveTo(540,yb);c.lineTo(CX+PW/2,yb);c.lineTo(CX+PW/2,PB);c.stroke();
+  // battery
+  c.beginPath();c.moveTo(354,yb-16);c.lineTo(354,yb+16);c.moveTo(372,yb-8);c.lineTo(372,yb+8);c.moveTo(390,yb-16);c.lineTo(390,yb+16);c.moveTo(408,yb-8);c.lineTo(408,yb+8);c.stroke();
+  c.beginPath();c.moveTo(330,yb);c.lineTo(354,yb);c.moveTo(408,yb);c.lineTo(430,yb);c.stroke();
+  c.fillStyle=fg;c.font='600 13px JetBrains Mono,monospace';c.fillText((S.V>0?'+':'')+T(S.V)+' V',380,yb+34);
+  // ammeter
+  c.fillStyle=bg;c.beginPath();c.arc(520,yb,20,0,6.283);c.fill();c.stroke();
+  var I=cur(S.V,p);c.fillStyle=amber;c.font='600 12px JetBrains Mono,monospace';c.fillText(I.toFixed(2),520,yb+4);
+  c.fillStyle=mute;c.font='12px JetBrains Mono,monospace';c.fillText('µA',520,yb+34);
+}
+
+function drawIV(){
+  var cv=$('ivc');fit(cv,640,260);var c=cv.getContext('2d'),p=phys(),w=640,h=260;
+  var L=54,R=16,Tp=14,B=38,pw=w-L-R,ph=h-Tp-B,line=css('--line'),mute=css('--mute'),fg=css('--fg'),amber=css('--amber'),teal=css('--teal');
+  var X=function(v){return L+(v+5)/10*pw},Y=function(i){return Tp+ph-(i/2.2)*ph};
+  c.clearRect(0,0,w,h);c.font='11px JetBrains Mono,monospace';c.textAlign='center';c.fillStyle=mute;c.strokeStyle=line;c.lineWidth=1;
+  var v,i;
+  for(v=-5;v<=5;v++){c.beginPath();c.moveTo(X(v),Tp);c.lineTo(X(v),Tp+ph);c.stroke();c.fillText(v,X(v),Tp+ph+14);}
+  c.textAlign='right';
+  for(i=0;i<=2;i+=.5){c.beginPath();c.moveTo(L,Y(i));c.lineTo(L+pw,Y(i));c.stroke();c.fillText(i.toFixed(1),L-6,Y(i)+4);}
+  c.textAlign='center';c.font='12px Vazirmatn,Tahoma,sans-serif';c.fillText('ولتاژ آند V (ولت)',L+pw/2,h-6);
+  c.save();c.translate(12,Tp+ph/2);c.rotate(-Math.PI/2);c.fillText('جریان (µA)',0,0);c.restore();
+  if(p.K>0){
+    c.strokeStyle=mute;c.setLineDash([4,4]);c.beginPath();c.moveTo(X(-p.K),Tp);c.lineTo(X(-p.K),Tp+ph);c.stroke();c.setLineDash([]);
+    c.fillStyle=mute;c.font='12px JetBrains Mono,monospace';c.fillText('−V₀ = '+T(-p.K),Math.min(L+pw-44,Math.max(L+44,X(-p.K))),Tp+11);
+  }
+  c.beginPath();for(v=-5;v<=5.001;v+=.05){var y=Y(cur(v,p));v<-4.99?c.moveTo(X(v),y):c.lineTo(X(v),y);}
+  c.strokeStyle=amber;c.lineWidth=2.5;c.stroke();c.lineWidth=1;
+  var cy=Y(cur(S.V,p));c.fillStyle=fg;c.beginPath();c.arc(X(S.V),cy,5.5,0,6.283);c.fill();c.strokeStyle=amber;c.lineWidth=2;c.stroke();c.lineWidth=1;
+}
+
+function loop(t){
+  var dt=Math.min(.05,(t-last)/1000||0);last=t;step(dt);drawStage();requestAnimationFrame(loop);
+}
+
+/* ---------- missions ---------- */
+var M={cur:0,done:[false,false,false,false],qi:0,pts:[],onSync:null};
+var QS=[
+ {q:'نور سدیم با طول موج ثابت می‌تابد. شدت را ۳ برابر می‌کنیم. چه اتفاقی می‌افتد؟ (شدت را در آزمایشگاه بالا ببر و ببین.)',
+  o:['انرژی بیشینه‌ی هر الکترون ۳ برابر می‌شود.','تعداد الکترون‌ها (جریان) بیشتر می‌شود ولی KE بیشینه و V₀ ثابت می‌ماند.','فرکانس آستانه‌ی سدیم ۳ برابر می‌شود.','هیچ چیز تغییر نمی‌کند.'],
+  a:1,e:'درست. شدت یعنی فوتون‌های بیشتر در ثانیه و هر فوتون انرژی hf دارد، پس جریان بالا می‌رود و V₀ همان می‌ماند.'},
+ {q:'نور قرمز (۶۵۰ nm) به سدیم می‌تابد و شدت آن را تا ۱۰۰٪ بالا می‌بریم. چه می‌شود؟',
+  o:['الکترون‌ها با انرژی کم خارج می‌شوند.','با تاخیر زیاد، الکترون‌ها خارج می‌شوند.','هیچ الکترونی خارج نمی‌شود چون hf < φ.','الکترون‌ها بیشتر می‌شوند چون نور شدیدتر است.'],
+  a:2,e:'درست. هر فوتون قرمز فقط ۱.۹۱ eV دارد و تابع کار سدیم ۲.۷۵ eV است. فوتون‌ها انرژی‌شان را جمع نمی‌کنند.'}
+];
+var TABS=['۱. آستانه','۲. ولتاژ ترمز','۳. نقش شدت','۴. ثابت پلانک'];
+function put(o){for(var k in o)S[k]=o[k];sync();}
+function msg(t,c){var m=$('mmsg');if(m){m.textContent=t;m.className='msg '+c;}}
+function renderTabs(){
+  $('tabs').innerHTML=TABS.map(function(t,i){return '<button class="tab'+(M.done[i]?' done':'')+'" role="tab" data-t="'+i+'" aria-selected="'+(i===M.cur)+'">'+t+'</button>'}).join('')+
+   '<span class="score">امتیاز: <span class="num">'+M.done.filter(Boolean).length+' / 4</span></span>';
+}
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-t]');if(b)openM(+b.dataset.t)});
+
+function openM(i){
+  M.cur=i;M.onSync=null;renderTabs();var el=$('mission');
+  if(i===0){
+    put({metal:2,lam:650,inten:60,V:0,beam:true});
+    el.innerHTML='<p>روی <b>سدیم</b> نور قرمز می‌تابد و چیزی رخ نمی‌دهد. طول موج را کم‌کم کوتاه کن تا اولین الکترون‌ها آزاد شوند. سپس <b>طول موج آستانه</b> را با دقت حدود ۶ نانومتر گزارش بده.</p><div class="row"><button class="btn primary" data-act="m1">گزارش آستانه</button><button class="btn" data-act="h1">راهنمایی</button></div><div class="msg" id="mmsg"></div>';
+  }else if(i===1){
+    put({metal:3,lam:200,inten:80,V:0,beam:true});
+    el.innerHTML='<p>نور فرابنفش ۲۰۰ nm به <b>روی</b> می‌تابد. ولتاژ آند را منفی کن تا جریان درست صفر شود. این ولتاژ، <b>ولتاژ ترمز V₀</b> است. با دقت ۰.۰۶ ولت پیدا کن و تایید بزن. می‌توانی بعد از آن، انرژی جنبشی بیشینه را با V₀ مقایسه کنی.</p><div class="row"><button class="btn primary" data-act="m2">تایید ولتاژ ترمز</button><button class="btn" data-act="h2">راهنمایی</button></div><div class="msg" id="mmsg"></div>';
+  }else if(i===2){
+    M.qi=0;put({metal:2,lam:400,inten:30,V:-.2,beam:true});renderQ();
+  }else{
+    M.pts=[];renderP();M.onSync=function(){};
+  }
+}
+function renderQ(){
+  var el=$('mission'),q=QS[M.qi];
+  el.innerHTML='<p><b>سوال '+(M.qi+1)+' از ۲.</b> '+q.q+'</p><div class="opts">'+q.o.map(function(o,i){return '<button class="opt" data-act="ans" data-i="'+i+'">'+o+'</button>'}).join('')+'</div><div class="msg" id="mmsg"></div>';
+}
+function renderP(){
+  var el=$('mission'),n=M.pts.length;
+  el.innerHTML='<p>ثابت پلانک را مثل میلیکان به دست بیاور. برای چند طول موج، ولتاژ ترمز را پیدا کن و <b>ثبت نقطه</b> بزن (جریان باید تازه صفر شود، با دقت ۰.۰۴ ولت). نمودار V₀ بر حسب f خطی است: <b>شیب = h/e</b> و عرض از مبدا = −φ/e. حداقل ۵ نقطه با فرکانس‌های متفاوت لازم است.</p>'+
+   '<div class="row"><button class="btn primary" data-act="rec">ثبت نقطه</button><button class="btn" data-act="clr">پاک کردن داده‌ها</button><span class="num" style="color:var(--mute)">'+n+' نقطه</span></div><div class="msg" id="mmsg"></div>'+
+   '<div class="two"><canvas id="h-chart" role="img" aria-label="نمودار ولتاژ ترمز بر حسب فرکانس"></canvas><div class="tw"><table><thead><tr><th>λ (nm)</th><th>f (×10¹⁴)</th><th>V₀ (V)</th></tr></thead><tbody>'+
+   M.pts.map(function(p){return '<tr class="num"><td>'+p.lam+'</td><td>'+p.f.toFixed(2)+'</td><td>'+p.v.toFixed(2)+'</td></tr>'}).join('')+'</tbody></table></div></div><div class="msg" id="hres"></div>';
+  drawH();
+}
+function fitLine(P){
+  var n=P.length,sx=0,sy=0,sxx=0,sxy=0;P.forEach(function(p){sx+=p.f;sy+=p.v;sxx+=p.f*p.f;sxy+=p.f*p.v});
+  var d=n*sxx-sx*sx;if(!d)return null;var m=(n*sxy-sx*sy)/d;return {m:m,b:(sy-m*sx)/n};
+}
+function drawH(){
+  var cv=$('h-chart');if(!cv)return;fit(cv,640,300);var c=cv.getContext('2d'),w=640,h=300,L=46,R=14,Tp=14,B=36,pw=w-L-R,ph=h-Tp-B;
+  var line=css('--line'),mute=css('--mute'),fg=css('--fg'),teal=css('--teal'),amber=css('--amber');
+  var X=function(f){return L+f/30*pw},Y=function(v){return Tp+ph-(v+6)/16*ph};
+  c.clearRect(0,0,w,h);c.font='11px JetBrains Mono,monospace';c.lineWidth=1;
+  var i;c.textAlign='center';c.fillStyle=mute;c.strokeStyle=line;
+  for(i=0;i<=30;i+=5){c.beginPath();c.moveTo(X(i),Tp);c.lineTo(X(i),Tp+ph);c.stroke();c.fillText(i,X(i),Tp+ph+14);}
+  c.textAlign='right';for(i=-6;i<=10;i+=2){c.beginPath();c.moveTo(L,Y(i));c.lineTo(L+pw,Y(i));c.stroke();c.fillText(i,L-6,Y(i)+4);}
+  c.strokeStyle=mute;c.beginPath();c.moveTo(L,Y(0));c.lineTo(L+pw,Y(0));c.moveTo(X(0),Tp);c.lineTo(X(0),Tp+ph);c.stroke();
+  c.textAlign='center';c.font='12px Vazirmatn,Tahoma,sans-serif';c.fillText('فرکانس f (×10¹⁴ هرتز)',L+pw/2,h-6);
+  c.save();c.translate(11,Tp+ph/2);c.rotate(-Math.PI/2);c.fillText('V₀ (ولت)',0,0);c.restore();
+  var F=fitLine(M.pts);
+  if(F&&M.pts.length>=2){c.strokeStyle=amber;c.lineWidth=2;c.setLineDash([6,4]);c.beginPath();c.moveTo(X(0),Y(F.b));c.lineTo(X(30),Y(F.m*30+F.b));c.stroke();c.setLineDash([]);c.lineWidth=1;}
+  M.pts.forEach(function(p){c.fillStyle=teal;c.beginPath();c.arc(X(p.f),Y(p.v),4.5,0,6.283);c.fill();});
+}
+function evalP(){
+  var r=$('hres'),n=M.pts.length;if(!r)return;
+  if(n<2){r.textContent='';return;}
+  var F=fitLine(M.pts),h=F.m*16.02,phi=-F.b,err=Math.abs(h-H_TRUE)/H_TRUE*100;
+  var span=Math.max.apply(0,M.pts.map(function(p){return p.f}))-Math.min.apply(0,M.pts.map(function(p){return p.f}));
+  r.className='msg ok';
+  r.innerHTML='نتیجه‌ی برازش: h ≈ <span class="num">'+h.toFixed(2)+'×10⁻³⁴ J·s</span> (مقدار مرجع 6.63)، φ ≈ <span class="num">'+phi.toFixed(2)+' eV</span>، خطا <span class="num">'+err.toFixed(1)+'%</span>';
+  if(n>=5&&span>=1.5&&err<6){
+    if(!M.done[3]){M.done[3]=true;renderTabs();}
+    r.innerHTML+='<br>ماموریت کامل شد. شیب خط همان h/e است و به فلز بستگی ندارد؛ فلزها فقط عرض از مبدا (−φ/e) را عوض می‌کنند. فلز دیگری را امتحان کن و ببین خطوط موازی‌اند.';
+  }else if(n>=5){r.className='msg warn';r.innerHTML+='<br>نقاط را در بازه‌ی فرکانسی گسترده‌تری بگیر (حداقل ۱.۵×۱۰¹⁴ هرتز اختلاف) یا ولتاژ ترمز را دقیق‌تر تنظیم کن.';}
+}
+
+$('mission').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;var a=b.dataset.act,p=phys();
+  if(a==='h1')msg('انرژی فوتون باید به تابع کار برسد: λ₀ = hc/φ = 1239.84 / 2.75.','warn');
+  else if(a==='h2')msg('ولتاژ ترمز برابر با انرژی جنبشی بیشینه بر حسب الکترون‌ولت است: V₀ = hf/e − φ/e.','warn');
+  else if(a==='m1'){
+    if(p.K<=0)msg('هنوز الکترونی آزاد نمی‌شود. طول موج را کوتاه‌تر کن.','bad');
+    else if(p.lam0-S.lam>6)msg('از آستانه خیلی گذشتی. طول موج را کمی بیشتر کن تا جریان تازه ظاهر شود.','bad');
+    else{M.done[0]=true;renderTabs();msg('درست است. λ₀ = hc/φ ≈ '+p.lam0.toFixed(0)+' nm. بلندتر از این، حتی ابرشدید هم الکترونی آزاد نمی‌کند.','ok');}
+  }else if(a==='m2'){
+    var d=S.V+p.K;
+    if(Math.abs(d)<=.06){M.done[1]=true;renderTabs();msg('عالی. V₀ = '+p.K.toFixed(2)+' V و هر الکترون با KE بیشینه‌ی '+p.K.toFixed(2)+' eV آزاد می‌شود. شدت را عوض کن و ببین V₀ تغییر نمی‌کند.','ok');}
+    else if(S.V>-.0)msg('ولتاژ باید منفی باشد تا الکترون‌ها را ترمز کند.','bad');
+    else if(d>0)msg('جریان هنوز صفر نشده است. ولتاژ را منفی‌تر کن.','bad');
+    else msg('جریان صفر است ولی ولتاژ از V₀ منفی‌تر است. کمی برگرد تا جریان تازه صفر شود.','bad');
+  }else if(a==='ans'){
+    var q=QS[M.qi],i=+b.dataset.i,opts=document.querySelectorAll('.opt');
+    if(i===q.a){
+      opts[i].classList.add('right');msg(q.e,'ok');
+      if(M.qi<QS.length-1){M.qi++;setTimeout(function(){if(M.cur===2){if(M.qi===1)put({metal:2,lam:650,inten:30,V:0});renderQ();}},1800);}
+      else{M.done[2]=true;renderTabs();}
+    }else{opts[i].classList.add('wrong');msg('درست نیست. در آزمایشگاه شدت و طول موج را عوض کن و KE بیشینه و جریان را ببین.','bad');}
+  }else if(a==='clr'){M.pts=[];renderP();}
+  else if(a==='rec'){
+    if(p.K<=0){msg('در این طول موج الکترونی آزاد نمی‌شود. طول موج را کوتاه‌تر کن.','bad');return;}
+    if(S.V>=0||Math.abs(S.V+p.K)>.04){msg('ولتاژ ترمز را دقیق‌تر تنظیم کن. جریان باید تازه صفر شود (دقت ۰.۰۴ ولت).','bad');return;}
+    if(M.pts.length&&M.pts[0].metal!==S.metal){M.pts=[];}
+    if(M.pts.some(function(q){return Math.abs(q.lam-S.lam)<5})){msg('این طول موج را قبلا ثبت کرده‌ای. طول موج دیگری را امتحان کن.','warn');return;}
+    M.pts.push({lam:S.lam,f:p.f,v:-S.V,metal:S.metal});M.pts.sort(function(a,b){return a.f-b.f});
+    renderP();msg('نقطه ثبت شد.','ok');evalP();
+  }
+});
+$('mission').addEventListener('input',function(){});
+window.addEventListener('resize',function(){drawIV();drawH();});
+
+sync();openM(0);requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
